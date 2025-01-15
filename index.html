@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D to 3D Conversion</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/OBJLoader.js"></script>
+</head>
+<body>
+    <h1>2D to 3D Conversion</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="convertImage()">Convert</button>
+    <div id="viewer" style="width: 800px; height: 600px;"></div>
+
+    <script>
+        function convertImage() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+
+            fetch('/convert', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const loader = new THREE.OBJLoader();
+                loader.load(url, function (object) {
+                    const viewer = document.getElementById('viewer');
+                    viewer.innerHTML = '';  // Clear previous content
+
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer();
+                    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+                    viewer.appendChild(renderer.domElement);
+
+                    scene.add(object);
+                    camera.position.z = 5;
+
+                    const light = new THREE.AmbientLight(0x404040); // Soft white light
+                    scene.add(light);
+
+                    function animate() {
+                        requestAnimationFrame(animate);
+                        object.rotation.y += 0.01;
+                        renderer.render(scene, camera);
+                    }
+                    animate();
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
